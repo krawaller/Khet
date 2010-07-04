@@ -3,13 +3,14 @@
         pos = function(x,y,dir){ return 'translate3d('+x*cellSize+'px, '+y*cellSize+'px, 0px) rotateZ('+(dir || 0)*90+'deg)'; };
     
     var boardEl = $('board'),
-        piecesEl = $('pieces');
+        piecesEl = $('pieces'),
+        laserEl = $('laser');
     
     var cellSize = 40,
         width = 10,
         height = 8;
     
-    var board = {
+    var boardSetup = {
         y0x0: 0,
         y0x1: 1,
         y0x8: 0,
@@ -30,6 +31,13 @@
         y7x1: 1,
         y7x8: 0,
         y7x9: 1
+    };
+    
+    var units = {
+        obelisk: { reflects: 0 },
+        pharao: { reflects: 0 },
+        pyramid: { reflects: 1 },
+        djed: { reflects: 2 }
     };
     
     var classic = {
@@ -60,6 +68,8 @@
         y7x5: [{ type: "obelisk", p: 1 }, { type: "obelisk", p: 1 }],
     };
     
+    var board = {};
+    
     var id;
     var pieces = [];
     var html = ['<table id="board"><tbody>'];
@@ -67,21 +77,78 @@
         html.push('<tr>');
         for(var x = 0; x < width; x++){
             id = 'y'+y+'x'+x;
-            html.push('<td id="'+id+'" class="'+(board[id] != undefined ? 'p' + board[id] : '')+'"></td>');
+            html.push('<td id="'+id+'" class="'+(boardSetup[id] != undefined ? 'p' + boardSetup[id] : '')+'"></td>');
             
             if(classic[id]){
                 classic[id].forEach(function(opts){
                     var piece = document.createElement('div');
                     piece.className = ['p'+opts.p, opts.type].join(" ");
                     piece.style.webkitTransform = pos(x,y,opts.dir);
-                    piecesEl.appendChild(piece);        
+                    piece.type = opts.type;
+                    piece.dir = opts.dir;
+                    piecesEl.appendChild(piece);
+                    board[id] = piece;        
                 });
+            } else {
+                board[id] = 0;
             }
         }
         html.push('</tr>');
     }
     html.push('</tbody></table>');
-    
-    
     boardEl.innerHTML = html.join("\n");
+    
+    var dirs = {
+        0: { dx: 0, dy: -1 },
+        1: { dx: 1, dy: 0 },
+        2: { dx: 0, dy: 1 },
+        3: { dx: -1, dy: 0 }
+    };
+    
+    var remap = {
+        0: 2,
+        1: 3,
+        2: 0,
+        3: 1
+    };
+    
+    var pyramid = {
+        0: { 0: 1, 3: 2 },
+        1: { 0: 3, 1: 2  },
+        2: { 1: 0, 2: 3 },
+        3: { 2: 1, 3: 0 }
+    };
+    
+    laser({
+        x: 0,
+        y: -1,
+        dir: 2
+    });
+    
+    function laser(opts){
+        var at = { x: opts.x, y: opts.y };
+        var el;
+        while((opts.y+=dirs[opts.dir].dy),(opts.x+=dirs[opts.dir].dx), (el = board['y'+opts.y+'x'+opts.x]), el != undefined){
+            if(el){
+                console.log(el);
+                var ray = document.createElement('div'),
+                    rayDir = remap[opts.dir];
+                    
+                ray.className = 'ray';
+                ray.style.height = (Math.abs(opts.x-at.x) + Math.abs(opts.y-at.y)) * cellSize + 'px';
+                ray.style.webkitTransform = pos(0.5+at.x, 0.5+at.y, rayDir);
+                laserEl.appendChild(ray);
+                
+                switch(el.type){
+                    case 'pyramid':
+                    opts.dir = pyramid[el.dir][opts.dir];
+                    break;
+                }
+                
+                laser(opts);
+                break;    
+            }
+        }
+        //document.createElement('div');
+    }
 })();
