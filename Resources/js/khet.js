@@ -57,13 +57,7 @@
         y7x9: 1
     };
     
-    var units = {
-        obelisk: { reflects: 0 },
-        pharao: { reflects: 0 },
-        pyramid: { reflects: 1 },
-        djed: { reflects: 2 }
-    };
-    
+    // Classic board setup
     var classic = {
         y0x4: [{ type: "obelisk", p: 0 }, { type: "obelisk", p: 0 }],
         y0x5: [{ type: "pharao", p: 0, dir: 0 }],
@@ -92,47 +86,53 @@
         y7x5: [{ type: "obelisk", p: 1 }, { type: "obelisk", p: 1 }],
     };
     
-    var board = {};
-    var currentPlayer = 1;
+    var board = {},
+        currentPlayer = 1,
+        id,
+        pieces = {};
     
-    var id;
-    var pieces = {};
+    // Create board and units
     boardEl.innerHTML = "";
     var table = document.createElement('table'), tbody = document.createElement('tbody'), tr, td;
     table.appendChild(tbody);
     for(var y = 0; y < height; y++){
         tr = document.createElement('tr');
+        
+        // Keep object maps of pieces and tiles
         pieces[y] = {};
         board[y] = {};
+        
         for(var x = 0; x < width; x++){
             pieces[y][x] = [];
             
             id = 'y'+y+'x'+x;
             td = document.createElement('td');
             td.id = id;
+            
+            // Tile belongs to which player?
             var p = boardSetup[id];
             td.p = p;
             td.className = (p != undefined ? 'p' + p : '');
+            
             board[y][x] = td;
-            
-            if(classic[id]){
-                classic[id].forEach(function(opts){
-                    var piece = document.createElement('div');
-                    piece.className = ['piece p'+opts.p, opts.type].join(" ");
-                    pos(piece, x, y, opts.dir);
-                    piece.type = opts.type;
-                    piece.p = opts.p;
-                    piecesEl.appendChild(piece);
-                    pieces[y][x].push(piece);        
-                });
-            }
-            
+
+            (classic[id] || []).forEach(function(opts){
+                var piece = document.createElement('div');
+                piece.className = ['piece p'+opts.p, opts.type].join(" ");
+                pos(piece, x, y, opts.dir);
+                piece.type = opts.type;
+                piece.p = opts.p;
+                piecesEl.appendChild(piece);
+                pieces[y][x].push(piece);        
+            });
+
             tr.appendChild(td);
         }
         tbody.appendChild(tr);
         boardEl.appendChild(table);
     }
     
+    // What dx and dy values represent a certain direction?
     var dirs = {
         0: { dx: 0, dy: -1 },
         1: { dx: 1, dy: 0 },
@@ -140,6 +140,7 @@
         3: { dx: -1, dy: 0 }
     };
     
+    // Reflections
     var remap = {
         0: 2,
         1: 3,
@@ -147,8 +148,7 @@
         3: 1
     };
     
-    
-    
+    // Unit definitions
     var units = {
         pyramid: {
             reflects: {
@@ -165,10 +165,14 @@
                 1: { 0: 3, 1: 2, 2: 1, 3: 0 },
                 2: { 0: 1, 1: 0, 2: 3, 3: 2 },
                 3: { 0: 3, 1: 2, 2: 1, 3: 0 }
-            }
+            },
+            replacer: true
         }
     };
     
+    /**
+     * Subscribe to laser shooter
+     */
     $.sub('/laser', function(){
         var opts;
         switch (currentPlayer) {
@@ -189,16 +193,19 @@
         var at = { x: opts.x, y: opts.y };
         var el, els;
 
+        // Loop through tiles
         while((opts.y+=dirs[opts.dir].dy), (opts.x+=dirs[opts.dir].dx), (els = (pieces[opts.y] || {})[opts.x])){
             if(els.length){
                 el = els[0];
+                
+                // Create a ray
                 var ray = document.createElement('div');
-                    
                 ray.className = 'ray';
                 ray.style.height = (Math.abs(opts.x-at.x) + Math.abs(opts.y-at.y)) * cellSize + 'px';
                 pos(ray, 0.5+at.x, 0.5+at.y, remap[opts.dir]);
                 laserEl.appendChild(ray);
                 
+                // Reflecting unit?
                 reflects = units[el.type].reflects;
                 if(reflects){
                     opts.dir = reflects[el.dir][opts.dir];
@@ -206,6 +213,7 @@
                     opts.dir = undefined;
                 }
                 
+                // Hit or reflect?
                 if(typeof opts.dir != 'undefined'){
                     laser(opts);    
                 } else {
@@ -218,6 +226,7 @@
                 break;    
             }
         }
+        // Create end of ray if applicable
         if(el == undefined){
             var ray = document.createElement('div');
   
@@ -228,6 +237,9 @@
         }
     }
     
+    /**
+     * Clean board from current selection
+     */
     var dirtyCells = [], dirtyAt;
     function cleanOngoing(){
         dirtyCells.forEach(function(cell){
@@ -250,6 +262,9 @@
         }
     }
     
+    /**
+     * Event bridge
+     */
     var touchstart = 'ontouchstart' in document.documentElement ? 'touchstart' : 'mousedown',
         touchmove = 'ontouchmove' in document.documentElement ? 'touchmove' : 'mousemove',
         touchend = 'ontouchend' in document.documentElement ? 'touchend' : 'mouseup';
@@ -257,7 +272,10 @@
     var move, dragging, down;
     var toggles = [0, 1,-1];
     var touches = 0;
-        
+    /**
+     * Touchdown
+     * @param {Object} e
+     */
     document.addEventListener(touchstart, function(e){
         e.preventDefault();
         touches++;
@@ -266,13 +284,14 @@
         var t = e.changedTouches ? e.changedTouches[0] : e,
             x = Math.floor(t.pageX / cellSize),
             y = Math.floor(t.pageY / cellSize),
-            el = ((pieces[y] || {})[x] || [])[0];
+            el = ((pieces[y] || {})[x] || [])[0]; // Any element there?
             
-            
+        // Is it a piece belonging to the currentPlayer?    
         if(el && /\bpiece\b/.test(el.className) && el.p == currentPlayer){
             if(!move || el != move.el){
                 cleanOngoing();
                 
+                // Initiate movement obejct
                 move = {
                     toggle: 0,
                     el: el,
@@ -288,14 +307,20 @@
                     touch: touches
                 };
     
-                el.className += ' active';
+                unit = units[el.type];
+                el.className += ' active'; // Mark active unit
+                
+                // Mark potential tile candidates
                 for(var iy = Math.max(y - 1, 0), iyMax = Math.min(y+1, height-1); iy <= iyMax; iy++){
                     for(var ix = Math.max(x - 1, 0), ixMax = Math.min(x+1, width-1); ix <= ixMax; ix++){
                         var candidate = board[iy][ix];
                         if(!(y == iy && x == ix) ){
                             if(typeof candidate.p == 'undefined' || candidate.p == currentPlayer){
-                                dirtyCells.push(candidate);
-                                candidate.className += ' potential';     
+                                
+                                if (pieces[iy][ix].length == 0 || unit.replacer || (unit.stacker && pieces[iy][ix][0].type == el.type)) {
+                                    dirtyCells.push(candidate);
+                                    candidate.className += ' potential';
+                                }     
                             }             
                         } else {
                             candidate.className += ' at';
@@ -304,6 +329,7 @@
                     }    
                 }                
             } else {
+                // Just update move offset
                 move.offset = {
                     x: t.pageX % cellSize,
                     y: t.pageY % cellSize
@@ -315,6 +341,10 @@
         }
     }, false);
     
+    /**
+     * The drag in drag'n'drop
+     * @param {Object} e
+     */
     document.addEventListener(touchmove, function(e){
         e.preventDefault();
         if (move && down) {
@@ -328,6 +358,10 @@
             
     }, false);
     
+    /**
+     * And the drop in drag'n'drop
+     * @param {Object} e
+     */
     document.addEventListener(touchend, function(e){
         e.preventDefault();
         
@@ -336,15 +370,18 @@
                 x = Math.floor(t.pageX / cellSize), 
                 y = Math.floor(t.pageY / cellSize),
                 el = ((pieces[y] || {})[x] || [])[0];
-                
+            
+            // Are we dragging?    
             if (dragging) {
                 document.body.className = '';
+                
+                // Allowed move?
                 if (board[y][x].className.hasClass('potential')) {
                     pos(move.el, x, y, move.orig.dir);
                     pieces[y][x].unshift(move.el);
                     pieces[move.orig.y][move.orig.x].splice(pieces[move.orig.y][move.orig.x].indexOf(move.el));
                 }
-                else {
+                else { // Otherwise float back
                     pieces[y][x].splice(pieces[y][x].indexOf(move.el));
                     pieces[move.orig.y][move.orig.x].unshift(move.el);
                     pos(move.el, move.orig.x, move.orig.y, move.orig.dir);
@@ -352,6 +389,7 @@
                 $.pub('/laser');
                 dragging = false;
             } else if(el == move.el && touches != move.touch) {
+                // Rotate unit
                 var dir = parseInt(move.orig.dir)+toggles[++move.toggle%3];
                 dir = dir < 0 ? 4 + dir : dir;
                 el.style.webkitTransform = pos(el, x, y, dir);
@@ -362,6 +400,10 @@
         down = dragging = false;
     }, false);
     
+    /**
+     * Move completed
+     * @param {Object} e
+     */
     $('done').addEventListener(touchend, function(e){
         e.preventDefault();
         e.stopPropagation();
