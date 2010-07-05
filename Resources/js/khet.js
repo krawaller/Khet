@@ -1,6 +1,6 @@
 ;(function(){
     var pos = function(el, x, y, dir){ 
-        dir = dir < 0 ? 4 + dir : dir;
+        dir = dir < 0 ? 4 + dir : dir > 3 ? dir%4 : dir;
         el.dir = dir; 
         el.style.webkitTransform = 'translate3d('+x*cellSize+'px, '+y*cellSize+'px, 0px) rotateZ('+(dir || 0)%4*90+'deg)'; 
     };
@@ -129,11 +129,22 @@
         3: 1
     };
     
-    var pyramid = {
-        0: { 0: 1, 3: 2 },
-        1: { 0: 3, 1: 2  },
-        2: { 1: 0, 2: 3 },
-        3: { 2: 1, 3: 0 }
+    
+    
+    var units = {
+        pyramid: {
+            0: { 0: 1, 3: 2 },
+            1: { 0: 3, 1: 2 },
+            2: { 1: 0, 2: 3 },
+            3: { 2: 1, 3: 0 }
+        },
+        
+        djed: {
+            0: { 0: 1, 1: 0, 2: 3, 3: 2 },
+            1: { 0: 3, 1: 2, 2: 1, 3: 0 },
+            2: { 0: 1, 1: 0, 2: 3, 3: 2 },
+            3: { 0: 3, 1: 2, 2: 1, 3: 0 }
+        }
     };
     
     $.sub('/laser', function(){
@@ -147,6 +158,7 @@
         laser(opts);   
     });
     
+    var unit;
     function laser(opts){
         var at = { x: opts.x, y: opts.y };
         var el, els;
@@ -161,10 +173,11 @@
                 pos(ray, 0.5+at.x, 0.5+at.y, remap[opts.dir]);
                 laserEl.appendChild(ray);
                 
-                switch(el.type){
-                    case 'pyramid':
-                    opts.dir = pyramid[el.dir][opts.dir];
-                    break;
+                unit = units[el.type];
+                if(unit){
+                    opts.dir = unit[el.dir][opts.dir];
+                } else {
+                    opts.dir = undefined;
                 }
                 
                 if(typeof opts.dir != 'undefined'){
