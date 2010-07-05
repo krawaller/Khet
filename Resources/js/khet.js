@@ -10,10 +10,11 @@
     var pos = function(el, x, y, dir, drag){ 
         dir = dir < 0 ? 4 + dir : dir > 3 ? dir%4 : dir;
         if(!drag && typeof el.x != 'undefined' && typeof el.y != 'undefined'){
-            pieces[el.y][el.x].splice(pieces[el.y][el.x].indexOf(el), 1);
-            window.pieces = pieces;
-            console.log(y,x,el.type)
+            if ((idx = pieces[el.y][el.x].indexOf(el)) != -1) {
+                pieces[el.y][el.x].splice(pieces[el.y][el.x].indexOf(el), 1);
+            }
             pieces[y][x].push(el);
+            
             el.x = x;
             el.y = y;
         }
@@ -22,12 +23,14 @@
         el.style.webkitTransform = 'translate3d('+x*cellSize+'px, '+y*cellSize+'px, 0px) rotateZ('+(dir || 0)%4*90+'deg)'; 
     };
     
+    var slice = Array.prototype.slice;
+    
     /**
      * Helper funcs
      * @param {Object} cls
      */
 
-    var tmp;
+    var tmp, idx;
     
     // Cache DOM Elements
     var boardEl = $('board'),
@@ -122,15 +125,17 @@
             
             board[y][x] = td;
 
-            (classic[id] || []).forEach(function(opts){
+            (classic[id] || []).forEach(function(opts, i){
                 var piece = document.createElement('div');
                 piece.className = ['piece p'+opts.p, opts.type].join(" ");
                 piece.x = x;
                 piece.y = y;
                 
-                pos(piece, x, y, opts.dir);
                 piece.type = opts.type;
                 piece.p = opts.p;
+                piece.id = ['p', opts.p, '_', opts.type, '_y' + y + 'x' + x + '_' + i].join("");
+                pos(piece, x, y, opts.dir || 0);
+                
                 piecesEl.appendChild(piece);
                 //pieces[y][x].push(piece);        
             });
@@ -293,6 +298,8 @@
     var move, dragging, down, replacements = [];
     var toggles = [0, 1,-1];
     var touches = 0;
+    var touch;
+    var stacking = false;
     /**
      * Touchdown
      * @param {Object} e
@@ -305,12 +312,26 @@
         var t = e.changedTouches ? e.changedTouches[0] : e,
             x = Math.floor(t.pageX / cellSize),
             y = Math.floor(t.pageY / cellSize),
-            el = ((pieces[y] || {})[x] || [])[0]; // Any element there?
+            els = ((pieces[y] || {})[x] || []),
+            el = els[0]; // Any element there?
+            
+        touch = { at: new Date().getTime(), x: t.pageX, y: t.pageY };
             
         // Is it a piece belonging to the currentPlayer?    
         if(el && /\bpiece\b/.test(el.className) && el.p == currentPlayer){
             if(!move || el != move.el){
-                cleanOngoing();
+                if(!move || move && !units[move.el.type].stackable){
+                    cleanOngoing();    
+                } else {
+                    stacking = {
+                        el: move.el,
+                        orig: {
+                            x: move.orig.x,
+                            y: move.orig.y,
+                            dir: move.orig.dir
+                        }
+                    }
+                }
                 
                 // Initiate movement obejct
                 move = {
@@ -358,8 +379,7 @@
             }
 
         } else if(move && move.el){
-            console.log('aha?')
-            //cleanOngoing();
+            move.el.dir = move.orig.dir;
         }
     }, false);
     
@@ -370,21 +390,37 @@
     document.addEventListener(touchmove, function(e){
         e.preventDefault();
         if (move && down) {
-            if(!dragging){
+            var t = e.changedTouches ? e.changedTouches[0] : e;
+            if(!dragging && Math.max(Math.abs(t.pageX - touch.x), Math.abs(t.pageY - touch.y)) > 10){
                 document.body.className = 'dragging';
                 dragging = true;
             }
-            var t = e.changedTouches ? e.changedTouches[0] : e;
+            
             pos(move.el, (t.pageX - move.offset.x ) / cellSize, (t.pageY - move.offset.y) / cellSize, move.orig.dir, true);
         }
             
     }, false);
+    
+    window.pieces = pieces;
+
     
     /**
      * And the drop in drag'n'drop
      * @param {Object} e
      */
     document.addEventListener(touchend, function(e){
+        if(!dragging && new Date().getTime() - touch.at > 500){
+            /*console.log("drag");
+            var els = pieces[move.orig.y][move.orig.x].filter(function(el){ return el != move.el });
+            els.forEach(function(el){
+                console.log('appending')
+                move.el.appendChild(el);
+            });*/
+            
+            
+            console.log(els);
+            //(move.el.nextSibling() || move.el.previousSibling)
+        }
         e.preventDefault();
         
         if (move) {
@@ -398,13 +434,23 @@
             });
             replacements = [];
             
+            if(stacking){
+                if(stacking.el.x != x || stacking.el.y != y){
+                    console.log(stacking.el.y, stacking.el.x, y, x )
+                    pos(stacking.el, stacking.orig.x, stacking.orig.y, stacking.dir);
+                }
+                stacking = false;
+
+            }
+            
+            
             // Are we dragging?    
-            if (dragging) {
+            if (dragging || (el != move.el && touches != move.touch)) {
                 document.body.className = '';
 
                 // Allowed move?
-                if ($.hasClass(board[y][x], 'potential')) {
-                    if(pieces[y][x].length){
+                if (board[y][x] && $.hasClass(board[y][x], 'potential')) {
+                    if(pieces[y][x].length && !units[pieces[y][x][0].type].stackable && !units[move.el.type].stackable){
                         var replaceable = pieces[y][x][0];
                         replacements.push({
                             el: replaceable,
@@ -413,11 +459,16 @@
                         });
                         pos(replaceable, move.orig.x, move.orig.y, replaceable.dir);
                     }
+                    
                     pos(move.el, x, y, move.orig.dir);
                 }
                 else { // Otherwise float back
                     console.log('get back')
                     pos(move.el, move.orig.x, move.orig.y, move.orig.dir);
+                    
+                    if(touches != move.touch){
+                        cleanOngoing();       
+                    }
                 }
                 $.pub('/laser');
                 dragging = false;
@@ -425,9 +476,19 @@
                 // Rotate unit
                 var dir = parseInt(move.orig.dir)+toggles[++move.toggle%3];
                 dir = dir < 0 ? 4 + dir : dir;
-                el.style.webkitTransform = pos(el, move.orig.x, move.orig.y, dir);
+                pos(el, move.orig.x, move.orig.y, dir);
                 $.pub('/laser');
             }
+            
+            /*else {
+                if($.hasClass(board[y][x], 'potential') || $.hasClass(board[y][x], 'at')){
+                    pos(move.el, x, y, move.el.dir);
+                    $.pub('/laser');
+                } else {
+                    cleanOngoing();
+                }
+            }*/
+
         }
         
         down = dragging = false;
