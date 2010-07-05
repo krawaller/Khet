@@ -1,24 +1,39 @@
 ;(function(){
+    
+    /**
+     * Rotate and position an object in a tile 
+     * @param {Object} el
+     * @param {Object} x
+     * @param {Object} y
+     * @param {Object} dir
+     */
     var pos = function(el, x, y, dir){ 
         dir = dir < 0 ? 4 + dir : dir > 3 ? dir%4 : dir;
         el.dir = dir; 
         el.style.webkitTransform = 'translate3d('+x*cellSize+'px, '+y*cellSize+'px, 0px) rotateZ('+(dir || 0)%4*90+'deg)'; 
     };
     
+    /**
+     * Helper funcs
+     * @param {Object} cls
+     */
     String.prototype.hasClass = function(cls){ return new RegExp("\\b" + cls + "\\b", "i").test(this); }
     String.prototype.addClass = function(cls){ return this.hasClass(cls) ? this : this + ' ' + cls; }
     String.prototype.removeClass = function(cls){ return this.replace(new RegExp("\\b" + cls + "\\b", "ig"), ""); }
     
     var tmp;
     
+    // Cache DOM Elements
     var boardEl = $('board'),
         piecesEl = $('pieces'),
         laserEl = $('laser');
     
+    // Board specific settings
     var cellSize = 40,
         width = 10,
         height = 8;
     
+    // What tiles belongs to which user?
     var boardSetup = {
         y0x0: 0,
         y0x1: 1,
@@ -95,7 +110,9 @@
             id = 'y'+y+'x'+x;
             td = document.createElement('td');
             td.id = id;
-            td.className = (boardSetup[id] != undefined ? 'p' + boardSetup[id] : '');
+            var p = boardSetup[id];
+            td.p = p;
+            td.className = (p != undefined ? 'p' + p : '');
             board[y][x] = td;
             
             if(classic[id]){
@@ -134,17 +151,21 @@
     
     var units = {
         pyramid: {
-            0: { 0: 1, 3: 2 },
-            1: { 0: 3, 1: 2 },
-            2: { 1: 0, 2: 3 },
-            3: { 2: 1, 3: 0 }
+            reflects: {
+                0: { 0: 1, 3: 2 },
+                1: { 0: 3, 1: 2 },
+                2: { 1: 0, 2: 3 },
+                3: { 2: 1, 3: 0 }
+            }
         },
         
         djed: {
-            0: { 0: 1, 1: 0, 2: 3, 3: 2 },
-            1: { 0: 3, 1: 2, 2: 1, 3: 0 },
-            2: { 0: 1, 1: 0, 2: 3, 3: 2 },
-            3: { 0: 3, 1: 2, 2: 1, 3: 0 }
+            reflects: {
+                0: { 0: 1, 1: 0, 2: 3, 3: 2 },
+                1: { 0: 3, 1: 2, 2: 1, 3: 0 },
+                2: { 0: 1, 1: 0, 2: 3, 3: 2 },
+                3: { 0: 3, 1: 2, 2: 1, 3: 0 }
+            }
         }
     };
     
@@ -163,7 +184,7 @@
         laser(opts);   
     });
     
-    var unit;
+    var reflects;
     function laser(opts){
         var at = { x: opts.x, y: opts.y };
         var el, els;
@@ -178,9 +199,9 @@
                 pos(ray, 0.5+at.x, 0.5+at.y, remap[opts.dir]);
                 laserEl.appendChild(ray);
                 
-                unit = units[el.type];
-                if(unit){
-                    opts.dir = unit[el.dir][opts.dir];
+                reflects = units[el.type].reflects;
+                if(reflects){
+                    opts.dir = reflects[el.dir][opts.dir];
                 } else {
                     opts.dir = undefined;
                 }
@@ -207,13 +228,17 @@
         }
     }
     
-    var dirtyCells = [];
+    var dirtyCells = [], dirtyAt;
     function cleanOngoing(){
-        console.log('cleaning');
         dirtyCells.forEach(function(cell){
             cell.className = cell.className.removeClass('potential');
         });
         dirtyCells = [];
+        
+        if (dirtyAt) {
+            dirtyAt.className = dirtyAt.className.removeClass('at');
+            dirtyAt = null;
+        }
         
         if (move) {
             move.el.style.webkitTransform = pos(move.el, move.orig.x, move.orig.y, move.orig.dir);
@@ -266,9 +291,15 @@
                 el.className += ' active';
                 for(var iy = Math.max(y - 1, 0), iyMax = Math.min(y+1, height-1); iy <= iyMax; iy++){
                     for(var ix = Math.max(x - 1, 0), ixMax = Math.min(x+1, width-1); ix <= ixMax; ix++){
+                        var candidate = board[iy][ix];
                         if(!(y == iy && x == ix) ){
-                            dirtyCells.push(board[iy][ix]);
-                            board[iy][ix].className += ' potential';    
+                            if(typeof candidate.p == 'undefined' || candidate.p == currentPlayer){
+                                dirtyCells.push(candidate);
+                                candidate.className += ' potential';     
+                            }             
+                        } else {
+                            candidate.className += ' at';
+                            dirtyAt = candidate;
                         }
                     }    
                 }                
@@ -328,13 +359,15 @@
             }
         }
         
-        down = dragging = move = false;
+        down = dragging = false;
     }, false);
     
     $('done').addEventListener(touchend, function(e){
         e.preventDefault();
         e.stopPropagation();
         currentPlayer = (currentPlayer + 1) % 2;
+        move.el.className = move.el.className.removeClass('active');
+        move = false;
         cleanOngoing();
         $.pub('/laser');
     }, false);

@@ -94,7 +94,12 @@ td {
 }
 
 .potential {
-    -webkit-box-shadow: 0px 0px 4px #00f;
+    background: #00f;
+    /*-webkit-box-shadow: 0px 0px 4px #00f;*/
+}
+
+.at {
+    background: #ff0;
 }
 
 .target {
