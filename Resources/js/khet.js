@@ -1,6 +1,12 @@
 ;(function(){
     var $ = function(id){ return document.getElementById(id); },
-        pos = function(x,y,dir){ return 'translate3d('+x*cellSize+'px, '+y*cellSize+'px, 0px) rotateZ('+(dir || 0)*90+'deg)'; };
+        pos = function(x,y,dir){ return 'translate3d('+x*cellSize+'px, '+y*cellSize+'px, 0px) rotateZ('+(dir || 0)%4*90+'deg)'; };
+    
+    String.prototype.hasClass = function(cls){ return new RegExp("\\b" + cls + "\\b", "i").test(this); }
+    String.prototype.addClass = function(cls){ return this.hasClass(cls) ? this : this + ' ' + cls; }
+    String.prototype.removeClass = function(cls){ return this.replace(new RegExp("\\b" + cls + "\\b", "ig"), ""); }
+    
+    var tmp;
     
     var boardEl = $('board'),
         piecesEl = $('pieces'),
@@ -71,32 +77,40 @@
     var board = {};
     
     var id;
-    var pieces = [];
-    var html = ['<table id="board"><tbody>'];
+    var pieces = {};
+    boardEl.innerHTML = "";
+    var table = document.createElement('table'), tbody = document.createElement('tbody'), tr, td;
+    table.appendChild(tbody);
     for(var y = 0; y < height; y++){
-        html.push('<tr>');
+        tr = document.createElement('tr');
+        pieces[y] = {};
+        board[y] = {};
         for(var x = 0; x < width; x++){
+            pieces[y][x] = [];
+            
             id = 'y'+y+'x'+x;
-            html.push('<td id="'+id+'" class="'+(boardSetup[id] != undefined ? 'p' + boardSetup[id] : '')+'"></td>');
+            td = document.createElement('td');
+            td.id = id;
+            td.className = (boardSetup[id] != undefined ? 'p' + boardSetup[id] : '');
+            board[y][x] = td;
             
             if(classic[id]){
                 classic[id].forEach(function(opts){
                     var piece = document.createElement('div');
-                    piece.className = ['p'+opts.p, opts.type].join(" ");
+                    piece.className = ['piece p'+opts.p, opts.type].join(" ");
                     piece.style.webkitTransform = pos(x,y,opts.dir);
                     piece.type = opts.type;
                     piece.dir = opts.dir;
                     piecesEl.appendChild(piece);
-                    board[id] = piece;        
+                    pieces[y][x].push(piece);        
                 });
-            } else {
-                board[id] = 0;
             }
+            
+            tr.appendChild(td);
         }
-        html.push('</tr>');
+        tbody.appendChild(tr);
+        boardEl.appendChild(table);
     }
-    html.push('</tbody></table>');
-    boardEl.innerHTML = html.join("\n");
     
     var dirs = {
         0: { dx: 0, dy: -1 },
@@ -127,16 +141,15 @@
     
     function laser(opts){
         var at = { x: opts.x, y: opts.y };
-        var el;
-        while((opts.y+=dirs[opts.dir].dy),(opts.x+=dirs[opts.dir].dx), (el = board['y'+opts.y+'x'+opts.x]), el != undefined){
-            if(el){
-                console.log(el);
-                var ray = document.createElement('div'),
-                    rayDir = remap[opts.dir];
+        var el, els;
+        while((opts.y+=dirs[opts.dir].dy), (opts.x+=dirs[opts.dir].dx), (els = (pieces[opts.y] || {})[opts.x])){
+            if(els.length){
+                el = els[0];
+                var ray = document.createElement('div');
                     
                 ray.className = 'ray';
                 ray.style.height = (Math.abs(opts.x-at.x) + Math.abs(opts.y-at.y)) * cellSize + 'px';
-                ray.style.webkitTransform = pos(0.5+at.x, 0.5+at.y, rayDir);
+                ray.style.webkitTransform = pos(0.5+at.x, 0.5+at.y, remap[opts.dir]);
                 laserEl.appendChild(ray);
                 
                 switch(el.type){
@@ -149,6 +162,77 @@
                 break;    
             }
         }
-        //document.createElement('div');
+        if(el == undefined){
+            var ray = document.createElement('div');
+  
+            ray.className = 'ray';
+            ray.style.height = (Math.abs(opts.x-at.x) + Math.abs(opts.y-at.y)) * cellSize + 'px';
+            ray.style.webkitTransform = pos(0.5+at.x, 0.5+at.y, remap[opts.dir]);
+            laserEl.appendChild(ray);
+        }
     }
+    
+    var dirtyCells = [];
+    function cleanOngoing(){
+        dirtyCells.forEach(function(cell){
+            cell.className = cell.className.removeClass('potential');
+        });
+        dirtyCells = [];
+        
+        if (move) {
+            move.el.style.webkitTransform = pos(move.orig.x, move.orig.y, move.orig.dir);
+            move.el.className = move.el.className.removeClass('active');
+            
+            move = false;
+        }
+    }
+    
+    var touchstart = 'ontouchstart' in document.documentElement ? 'touchstart' : 'mousedown',
+        touchmove = 'ontouchmove' in document.documentElement ? 'touchmove' : 'mousemove',
+        touchend = 'ontouchend' in document.documentElement ? 'touchend' : 'mouseup';
+    
+    var move;
+    var toggles = [0, 1,-1];
+        
+    document.addEventListener(touchstart, function(e){
+        var t = e.changedTouches ? e.changedTouches[0] : e,
+            x = Math.floor(t.pageX / cellSize),
+            y = Math.floor(t.pageY / cellSize),
+            el = ((pieces[y] || {})[x] || [])[0];
+            
+            
+        if(el && /\bpiece\b/.test(el.className)){
+            if(move && el == move.el){
+                var dir = parseInt(el.dir)+toggles[++move.toggle%3];
+                el.dir = dir; 
+                el.style.webkitTransform = pos(x, y, dir);
+                
+            } else {
+                cleanOngoing();
+                
+                move = {
+                    toggle: 0,
+                    el: el,
+                    orig: {
+                        x: x,
+                        y: y,
+                        dir: el.dir
+                    }
+                };
+    
+                el.className += ' active';
+                for(var iy = Math.max(y - 1, 0), iyMax = Math.min(y+1, height-1); iy <= iyMax; iy++){
+                    for(var ix = Math.max(x - 1, 0), ixMax = Math.min(x+1, width-1); ix <= ixMax; ix++){
+                        if(!(y == iy && x == ix) ){
+                            dirtyCells.push(board[iy][ix]);
+                            board[iy][ix].className += ' potential';    
+                        }
+                    }    
+                }                
+            }
+
+        } else if(move.el){
+            cleanOngoing();
+        }
+    }, false);
 })();

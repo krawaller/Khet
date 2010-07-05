@@ -52,6 +52,7 @@ td {
     width: 38px;
     height: 38px;
     position: absolute;
+    -webkit-transition: -webkit-transform 0.4s ease-in-out;
 }
 
 .p0.obelisk { background-image: url(../pics/obelisk0.png); }
@@ -65,8 +66,26 @@ td {
 .p1.pyramid { background-image: url(../pics/pyramid1.png); }
 
 .ray {
-    width: 2px;
+    width: 3px;
     background: #0f0;
     -webkit-transform-origin: 0 0;
     position: absolute;
+    -webkit-box-shadow: 0px 0px 4px #0f0;
+}
+
+#menu {
+    width: 80px;
+    height: 100%;
+    background: #f00;
+    position: absolute;
+    top: 0px;
+    left: 400px;
+}
+
+.active {
+    -webkit-box-shadow: 0px 0px 4px #0f0;
+}
+
+.potential {
+    -webkit-box-shadow: 0px 0px 4px #00f;
 }
