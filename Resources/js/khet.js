@@ -17,10 +17,7 @@
      * Helper funcs
      * @param {Object} cls
      */
-    String.prototype.hasClass = function(cls){ return new RegExp("\\b" + cls + "\\b", "i").test(this); }
-    String.prototype.addClass = function(cls){ return this.hasClass(cls) ? this : this + ' ' + cls; }
-    String.prototype.removeClass = function(cls){ return this.replace(new RegExp("\\b" + cls + "\\b", "ig"), ""); }
-    
+
     var tmp;
     
     // Cache DOM Elements
@@ -243,7 +240,7 @@
     var dirtyCells = [], dirtyAt;
     function cleanOngoing(){
         dirtyCells.forEach(function(cell){
-            cell.className = cell.className.removeClass('potential');
+            $.removeClass(cell, 'potential');
         });
         dirtyCells = [];
         
@@ -255,7 +252,7 @@
         if (move) {
             move.el.style.webkitTransform = pos(move.el, move.orig.x, move.orig.y, move.orig.dir);
             move.el.dir = move.orig.dir;
-            move.el.className = move.el.className.removeClass('active');
+            $.removeClass(move.el, 'active');
             
             move = false;
             $.pub('/laser');
@@ -376,7 +373,7 @@
                 document.body.className = '';
                 
                 // Allowed move?
-                if (board[y][x].className.hasClass('potential')) {
+                if ($.hasClass(board[y][x], 'potential')) {
                     pos(move.el, x, y, move.orig.dir);
                     pieces[y][x].unshift(move.el);
                     pieces[move.orig.y][move.orig.x].splice(pieces[move.orig.y][move.orig.x].indexOf(move.el));
@@ -408,7 +405,7 @@
         e.preventDefault();
         e.stopPropagation();
         currentPlayer = (currentPlayer + 1) % 2;
-        move.el.className = move.el.className.removeClass('active');
+        $.removeClass(move.el, 'active');
         move = false;
         cleanOngoing();
         $.pub('/laser');
