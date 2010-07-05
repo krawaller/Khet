@@ -89,3 +89,11 @@ td {
 .potential {
     -webkit-box-shadow: 0px 0px 4px #00f;
 }
+
+.target {
+    opacity: 0.5;
+    width: 40px;
+    height: 40px;
+    background: #0f0;
+    position: absolute;
+}

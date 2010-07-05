@@ -1,6 +1,9 @@
 ;(function(){
-    var $ = function(id){ return document.getElementById(id); },
-        pos = function(x,y,dir){ return 'translate3d('+x*cellSize+'px, '+y*cellSize+'px, 0px) rotateZ('+(dir || 0)%4*90+'deg)'; };
+    var pos = function(el, x, y, dir){ 
+        dir = dir < 0 ? 4 + dir : dir;
+        el.dir = dir; 
+        el.style.webkitTransform = 'translate3d('+x*cellSize+'px, '+y*cellSize+'px, 0px) rotateZ('+(dir || 0)%4*90+'deg)'; 
+    };
     
     String.prototype.hasClass = function(cls){ return new RegExp("\\b" + cls + "\\b", "i").test(this); }
     String.prototype.addClass = function(cls){ return this.hasClass(cls) ? this : this + ' ' + cls; }
@@ -75,6 +78,7 @@
     };
     
     var board = {};
+    var currentPlayer = 0;
     
     var id;
     var pieces = {};
@@ -98,9 +102,8 @@
                 classic[id].forEach(function(opts){
                     var piece = document.createElement('div');
                     piece.className = ['piece p'+opts.p, opts.type].join(" ");
-                    piece.style.webkitTransform = pos(x,y,opts.dir);
+                    pos(piece, x, y, opts.dir);
                     piece.type = opts.type;
-                    piece.dir = opts.dir;
                     piecesEl.appendChild(piece);
                     pieces[y][x].push(piece);        
                 });
@@ -133,15 +136,21 @@
         3: { 2: 1, 3: 0 }
     };
     
-    laser({
-        x: 0,
-        y: -1,
-        dir: 2
+    $.sub('/laser', function(){
+        var opts;
+        switch (currentPlayer) {
+            case 0:
+                opts = { x: 0, y: -1, dir: 2 };
+                break;
+        }
+        laserEl.innerHTML = "";
+        laser(opts);   
     });
     
     function laser(opts){
         var at = { x: opts.x, y: opts.y };
         var el, els;
+
         while((opts.y+=dirs[opts.dir].dy), (opts.x+=dirs[opts.dir].dx), (els = (pieces[opts.y] || {})[opts.x])){
             if(els.length){
                 el = els[0];
@@ -149,7 +158,7 @@
                     
                 ray.className = 'ray';
                 ray.style.height = (Math.abs(opts.x-at.x) + Math.abs(opts.y-at.y)) * cellSize + 'px';
-                ray.style.webkitTransform = pos(0.5+at.x, 0.5+at.y, remap[opts.dir]);
+                pos(ray, 0.5+at.x, 0.5+at.y, remap[opts.dir]);
                 laserEl.appendChild(ray);
                 
                 switch(el.type){
@@ -158,7 +167,15 @@
                     break;
                 }
                 
-                laser(opts);
+                if(typeof opts.dir != 'undefined'){
+                    laser(opts);    
+                } else {
+                    var target = document.createElement('div');
+                    target.className = 'target';
+                    pos(target, opts.x, opts.y, 0);
+                    laserEl.appendChild(target);
+                }
+
                 break;    
             }
         }
@@ -167,7 +184,7 @@
   
             ray.className = 'ray';
             ray.style.height = (Math.abs(opts.x-at.x) + Math.abs(opts.y-at.y)) * cellSize + 'px';
-            ray.style.webkitTransform = pos(0.5+at.x, 0.5+at.y, remap[opts.dir]);
+            pos(ray, 0.5+at.x, 0.5+at.y, remap[opts.dir]);
             laserEl.appendChild(ray);
         }
     }
@@ -180,10 +197,12 @@
         dirtyCells = [];
         
         if (move) {
-            move.el.style.webkitTransform = pos(move.orig.x, move.orig.y, move.orig.dir);
+            move.el.style.webkitTransform = pos(move.el, move.orig.x, move.orig.y, move.orig.dir);
+            move.el.dir = move.orig.dir;
             move.el.className = move.el.className.removeClass('active');
             
             move = false;
+            $.pub('/laser');
         }
     }
     
@@ -203,10 +222,11 @@
             
         if(el && /\bpiece\b/.test(el.className)){
             if(move && el == move.el){
-                var dir = parseInt(el.dir)+toggles[++move.toggle%3];
+                var dir = parseInt(move.orig.dir)+toggles[++move.toggle%3];
+                dir = dir < 0 ? 4 + dir : dir;
                 el.dir = dir; 
-                el.style.webkitTransform = pos(x, y, dir);
-                
+                el.style.webkitTransform = pos(el, x, y, dir);
+                $.pub('/laser');
             } else {
                 cleanOngoing();
                 
@@ -235,4 +255,7 @@
             cleanOngoing();
         }
     }, false);
+    
+    $.sub('/**', function(){ console.log('Listening'); console.log.apply(console, arguments); });
+    $.pub('/laser');
 })();
