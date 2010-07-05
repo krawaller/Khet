@@ -7,8 +7,17 @@
      * @param {Object} y
      * @param {Object} dir
      */
-    var pos = function(el, x, y, dir){ 
+    var pos = function(el, x, y, dir, drag){ 
         dir = dir < 0 ? 4 + dir : dir > 3 ? dir%4 : dir;
+        if(!drag && typeof el.x != 'undefined' && typeof el.y != 'undefined'){
+            pieces[el.y][el.x].splice(pieces[el.y][el.x].indexOf(el), 1);
+            window.pieces = pieces;
+            console.log(y,x,el.type)
+            pieces[y][x].push(el);
+            el.x = x;
+            el.y = y;
+        }
+
         el.dir = dir; 
         el.style.webkitTransform = 'translate3d('+x*cellSize+'px, '+y*cellSize+'px, 0px) rotateZ('+(dir || 0)%4*90+'deg)'; 
     };
@@ -116,11 +125,14 @@
             (classic[id] || []).forEach(function(opts){
                 var piece = document.createElement('div');
                 piece.className = ['piece p'+opts.p, opts.type].join(" ");
+                piece.x = x;
+                piece.y = y;
+                
                 pos(piece, x, y, opts.dir);
                 piece.type = opts.type;
                 piece.p = opts.p;
                 piecesEl.appendChild(piece);
-                pieces[y][x].push(piece);        
+                //pieces[y][x].push(piece);        
             });
 
             tr.appendChild(td);
@@ -153,7 +165,8 @@
                 1: { 0: 3, 1: 2 },
                 2: { 1: 0, 2: 3 },
                 3: { 2: 1, 3: 0 }
-            }
+            },
+            replaceable: true
         },
         
         djed: {
@@ -163,7 +176,17 @@
                 2: { 0: 1, 1: 0, 2: 3, 3: 2 },
                 3: { 0: 3, 1: 2, 2: 1, 3: 0 }
             },
-            replacer: true
+            replacer: true,
+            replaceable: false
+        },
+        
+        pharao: {
+            replaceable: false
+        },
+        
+        obelisk: {
+            replaceable: true,
+            stackable: 2
         }
     };
     
@@ -245,11 +268,12 @@
         dirtyCells = [];
         
         if (dirtyAt) {
-            dirtyAt.className = dirtyAt.className.removeClass('at');
+            $.removeClass(dirtyAt, 'at');
             dirtyAt = null;
         }
         
         if (move) {
+            console.log('Cleaning move')
             move.el.style.webkitTransform = pos(move.el, move.orig.x, move.orig.y, move.orig.dir);
             move.el.dir = move.orig.dir;
             $.removeClass(move.el, 'active');
@@ -266,7 +290,7 @@
         touchmove = 'ontouchmove' in document.documentElement ? 'touchmove' : 'mousemove',
         touchend = 'ontouchend' in document.documentElement ? 'touchend' : 'mouseup';
     
-    var move, dragging, down;
+    var move, dragging, down, replacements = [];
     var toggles = [0, 1,-1];
     var touches = 0;
     /**
@@ -314,7 +338,7 @@
                         if(!(y == iy && x == ix) ){
                             if(typeof candidate.p == 'undefined' || candidate.p == currentPlayer){
                                 
-                                if (pieces[iy][ix].length == 0 || unit.replacer || (unit.stacker && pieces[iy][ix][0].type == el.type)) {
+                                if (pieces[iy][ix].length == 0 || (unit.replacer && units[pieces[iy][ix][0].type].replaceable) || (unit.stacker && pieces[iy][ix][0].type == el.type)) {
                                     dirtyCells.push(candidate);
                                     candidate.className += ' potential';
                                 }     
@@ -334,6 +358,7 @@
             }
 
         } else if(move && move.el){
+            console.log('aha?')
             //cleanOngoing();
         }
     }, false);
@@ -350,7 +375,7 @@
                 dragging = true;
             }
             var t = e.changedTouches ? e.changedTouches[0] : e;
-            pos(move.el, (t.pageX - move.offset.x ) / cellSize, (t.pageY - move.offset.y) / cellSize, move.orig.dir);
+            pos(move.el, (t.pageX - move.offset.x ) / cellSize, (t.pageY - move.offset.y) / cellSize, move.orig.dir, true);
         }
             
     }, false);
@@ -368,19 +393,30 @@
                 y = Math.floor(t.pageY / cellSize),
                 el = ((pieces[y] || {})[x] || [])[0];
             
+            replacements.forEach(function(replacement){
+                pos(replacement.el, replacement.x, replacement.y, replacement.el.dir);
+            });
+            replacements = [];
+            
             // Are we dragging?    
             if (dragging) {
                 document.body.className = '';
-                
+
                 // Allowed move?
                 if ($.hasClass(board[y][x], 'potential')) {
+                    if(pieces[y][x].length){
+                        var replaceable = pieces[y][x][0];
+                        replacements.push({
+                            el: replaceable,
+                            x: replaceable.x,
+                            y: replaceable.y
+                        });
+                        pos(replaceable, move.orig.x, move.orig.y, replaceable.dir);
+                    }
                     pos(move.el, x, y, move.orig.dir);
-                    pieces[y][x].unshift(move.el);
-                    pieces[move.orig.y][move.orig.x].splice(pieces[move.orig.y][move.orig.x].indexOf(move.el));
                 }
                 else { // Otherwise float back
-                    pieces[y][x].splice(pieces[y][x].indexOf(move.el));
-                    pieces[move.orig.y][move.orig.x].unshift(move.el);
+                    console.log('get back')
                     pos(move.el, move.orig.x, move.orig.y, move.orig.dir);
                 }
                 $.pub('/laser');
@@ -389,7 +425,7 @@
                 // Rotate unit
                 var dir = parseInt(move.orig.dir)+toggles[++move.toggle%3];
                 dir = dir < 0 ? 4 + dir : dir;
-                el.style.webkitTransform = pos(el, x, y, dir);
+                el.style.webkitTransform = pos(el, move.orig.x, move.orig.y, dir);
                 $.pub('/laser');
             }
         }
