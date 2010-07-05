@@ -78,7 +78,7 @@
     };
     
     var board = {};
-    var currentPlayer = 0;
+    var currentPlayer = 1;
     
     var id;
     var pieces = {};
@@ -104,6 +104,7 @@
                     piece.className = ['piece p'+opts.p, opts.type].join(" ");
                     pos(piece, x, y, opts.dir);
                     piece.type = opts.type;
+                    piece.p = opts.p;
                     piecesEl.appendChild(piece);
                     pieces[y][x].push(piece);        
                 });
@@ -152,6 +153,10 @@
         switch (currentPlayer) {
             case 0:
                 opts = { x: 0, y: -1, dir: 2 };
+                break;
+                
+            case 1:
+                opts = { x: 9, y: 8, dir: 0 };
                 break;
         }
         laserEl.innerHTML = "";
@@ -204,6 +209,7 @@
     
     var dirtyCells = [];
     function cleanOngoing(){
+        console.log('cleaning');
         dirtyCells.forEach(function(cell){
             cell.className = cell.className.removeClass('potential');
         });
@@ -223,24 +229,23 @@
         touchmove = 'ontouchmove' in document.documentElement ? 'touchmove' : 'mousemove',
         touchend = 'ontouchend' in document.documentElement ? 'touchend' : 'mouseup';
     
-    var move;
+    var move, dragging, down;
     var toggles = [0, 1,-1];
+    var touches = 0;
         
     document.addEventListener(touchstart, function(e){
+        e.preventDefault();
+        touches++;
+        down = true;
+        
         var t = e.changedTouches ? e.changedTouches[0] : e,
             x = Math.floor(t.pageX / cellSize),
             y = Math.floor(t.pageY / cellSize),
             el = ((pieces[y] || {})[x] || [])[0];
             
             
-        if(el && /\bpiece\b/.test(el.className)){
-            if(move && el == move.el){
-                var dir = parseInt(move.orig.dir)+toggles[++move.toggle%3];
-                dir = dir < 0 ? 4 + dir : dir;
-                el.dir = dir; 
-                el.style.webkitTransform = pos(el, x, y, dir);
-                $.pub('/laser');
-            } else {
+        if(el && /\bpiece\b/.test(el.className) && el.p == currentPlayer){
+            if(!move || el != move.el){
                 cleanOngoing();
                 
                 move = {
@@ -250,7 +255,12 @@
                         x: x,
                         y: y,
                         dir: el.dir
-                    }
+                    },
+                    offset: {
+                        x: t.pageX % cellSize,
+                        y: t.pageY % cellSize
+                    },
+                    touch: touches
                 };
     
                 el.className += ' active';
@@ -262,11 +272,71 @@
                         }
                     }    
                 }                
+            } else {
+                move.offset = {
+                    x: t.pageX % cellSize,
+                    y: t.pageY % cellSize
+                };
             }
 
-        } else if(move.el){
-            cleanOngoing();
+        } else if(move && move.el){
+            //cleanOngoing();
         }
+    }, false);
+    
+    document.addEventListener(touchmove, function(e){
+        e.preventDefault();
+        if (move && down) {
+            if(!dragging){
+                document.body.className = 'dragging';
+                dragging = true;
+            }
+            var t = e.changedTouches ? e.changedTouches[0] : e;
+            pos(move.el, (t.pageX - move.offset.x ) / cellSize, (t.pageY - move.offset.y) / cellSize, move.orig.dir);
+        }
+            
+    }, false);
+    
+    document.addEventListener(touchend, function(e){
+        e.preventDefault();
+        
+        if (move) {
+            var t = e.changedTouches ? e.changedTouches[0] : e, 
+                x = Math.floor(t.pageX / cellSize), 
+                y = Math.floor(t.pageY / cellSize),
+                el = ((pieces[y] || {})[x] || [])[0];
+                
+            if (dragging) {
+                document.body.className = '';
+                if (board[y][x].className.hasClass('potential')) {
+                    pos(move.el, x, y, move.orig.dir);
+                    pieces[y][x].unshift(move.el);
+                    pieces[move.orig.y][move.orig.x].splice(pieces[move.orig.y][move.orig.x].indexOf(move.el));
+                }
+                else {
+                    pieces[y][x].splice(pieces[y][x].indexOf(move.el));
+                    pieces[move.orig.y][move.orig.x].unshift(move.el);
+                    pos(move.el, move.orig.x, move.orig.y, move.orig.dir);
+                }
+                $.pub('/laser');
+                dragging = false;
+            } else if(el == move.el && touches != move.touch) {
+                var dir = parseInt(move.orig.dir)+toggles[++move.toggle%3];
+                dir = dir < 0 ? 4 + dir : dir;
+                el.style.webkitTransform = pos(el, x, y, dir);
+                $.pub('/laser');
+            }
+        }
+        
+        down = dragging = move = false;
+    }, false);
+    
+    $('done').addEventListener(touchend, function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        currentPlayer = (currentPlayer + 1) % 2;
+        cleanOngoing();
+        $.pub('/laser');
     }, false);
     
     $.sub('/**', function(){ console.log('Listening'); console.log.apply(console, arguments); });

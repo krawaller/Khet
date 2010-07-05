@@ -55,6 +55,12 @@ td {
     -webkit-transition: -webkit-transform 0.4s ease-in-out;
 }
 
+.dragging #pieces > div {
+    -webkit-transition: none;
+}
+
+
+
 .p0.obelisk { background-image: url(../pics/obelisk0.png); }
 .p0.pharao { background-image: url(../pics/pharao0.png); }
 .p0.djed { background-image: url(../pics/djed0.png); }
@@ -84,6 +90,7 @@ td {
 
 .active {
     -webkit-box-shadow: 0px 0px 4px #0f0;
+    z-index: 1337;
 }
 
 .potential {
