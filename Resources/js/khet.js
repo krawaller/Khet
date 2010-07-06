@@ -198,7 +198,7 @@
     /**
      * Subscribe to laser shooter
      */
-    $.sub('/laser', function(){
+    function laser(){
         var opts;
         switch (currentPlayer) {
             case 0:
@@ -211,11 +211,11 @@
         }
         laserEl.innerHTML = "";
         targets = [];
-        laser(opts);   
-    });
+        laserRay(opts);   
+    }
     
     var reflects;
-    function laser(opts){
+    function laserRay(opts){
         var at = { x: opts.x, y: opts.y };
         var el, els;
 
@@ -241,7 +241,7 @@
                 
                 // Hit or reflect?
                 if(typeof opts.dir != 'undefined'){
-                    laser(opts);    
+                    laserRay(opts);    
                 } else {
                     var target = document.createElement('div');
                     target.className = 'target';
@@ -290,7 +290,7 @@
         if (!noRevert) {
             move = [];
         }
-        $.pub('/laser');
+        laser();
         
     }
     
@@ -481,7 +481,7 @@
                         cleanOngoing();       
                     }
                 }
-                $.pub('/laser');
+                laser();
                 dragging = false;
 
             } else if(el == active.el && touches != active.touch) {
@@ -491,7 +491,7 @@
                 var dir = parseInt(active.orig.dir)+toggles[++active.toggle%3];
                 dir = dir < 0 ? 4 + dir : dir;
                 pos(el, active.orig.x, active.orig.y, dir);
-                $.pub('/laser');
+                laser();
             }
         }
         
@@ -521,15 +521,11 @@
             cleanOngoing(1);
             move = [];
             
-            $.pub('/laser');
+            laser();
         } else {
             alert('Must move!');
         }
     }, false);
     
-    $.sub('/**', function(){ 
-        //console.log('Listening'); 
-        console.log.apply(console, arguments); 
-    });
-    $.pub('/laser');
+    laser();
 })();
