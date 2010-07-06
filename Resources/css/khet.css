@@ -109,3 +109,7 @@ td {
     background: #0f0;
     position: absolute;
 }
+
+.explode {
+    -webkit-transform: scale(4);
+}
