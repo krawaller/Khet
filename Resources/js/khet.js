@@ -1,6 +1,6 @@
 ;(function(){
     
-    if(/iPhone|iPod|iPad/.test(navigator.userAgent) && !navigator.standalone && !(/debug$/.test(location.href)) ){
+    if(/iPhone|iPod|iPad/.test(navigator.userAgent) && !navigator.standalone && !(/debug$/.test(location.href)) && false){
         $('install').style.display = 'block';
         document.addEventListener('touchmove', function(e){ e.preventDefault(); }, false);
         return;
@@ -92,13 +92,13 @@
         y4x4: [{ type: "djed", p: 1, dir: 0}],
         y4x5: [{ type: "djed", p: 1, dir: 1}],
         y4x7: [{ type: "pyramid", p: 0, dir: 3}],
-        y4x9: [{ type: "pyramid", p: 1, dir: 1}],
+        y4x9: [{ type: "eye", p: 1, dir: 1}],
         y5x6: [{ type: "pyramid", p: 0, dir: 0}],
         y6x7: [{ type: "pyramid", p: 1, dir: 3 }],
         y7x2: [{ type: "pyramid", p: 1, dir: 2 }],
         y7x3: [{ type: "obelisk", p: 1 }, { type: "obelisk", p: 1 }],
         y7x4: [{ type: "pharao", p: 1, dir: 2 }],
-        y7x5: [{ type: "obelisk", p: 1 }, { type: "obelisk", p: 1 }],
+        y7x5: [{ type: "obelisk", p: 1 }, { type: "obelisk", p: 1 }]
     };
     
     var board = {},
@@ -180,6 +180,18 @@
             replaceable: true
         },
         
+        eye: {
+            reflects: {
+                0: { 0: 1, 1: 0, 2: 3, 3: 2 },
+                1: { 0: 3, 1: 2, 2: 1, 3: 0 },
+                2: { 0: 1, 1: 0, 2: 3, 3: 2 },
+                3: { 0: 3, 1: 2, 2: 1, 3: 0 }
+            },
+            passthrough: true,
+            replacer: true,
+            replaceable: false
+        },
+        
         djed: {
             reflects: {
                 0: { 0: 1, 1: 0, 2: 3, 3: 2 },
@@ -221,10 +233,10 @@
     }
     
     var reflects;
-    function laserRay(opts){
+    function laserRay(opts,why){
         var at = { x: opts.x, y: opts.y };
         var el, els;
-
+Ti.API.log(opts.x+" "+opts.y+" "+opts.dir+" "+why);
         // Loop through tiles
         while((opts.y+=dirs[opts.dir].dy), (opts.x+=dirs[opts.dir].dx), (els = (pieces[opts.y] || {})[opts.x])){
             if(els.length){
@@ -236,18 +248,17 @@
                 ray.style.height = (Math.abs(opts.x-at.x) + Math.abs(opts.y-at.y)) * cellSize + 'px';
                 pos(ray, 0.5+at.x, 0.5+at.y, remap[opts.dir]);
                 laserEl.appendChild(ray);
+
+                // Passthrough unit? create new beam from same square
+                if (units[el.type].passthrough){
+                    laserRay($.clone(opts),why);
+                }
                 
                 // Reflecting unit?
                 reflects = units[el.type].reflects;
-                if(reflects){
+                if(reflects && reflects[el.dir][opts.dir]){
                     opts.dir = reflects[el.dir][opts.dir];
-                } else {
-                    opts.dir = undefined;
-                }
-                
-                // Hit or reflect?
-                if(typeof opts.dir != 'undefined'){
-                    laserRay(opts);    
+                    laserRay(opts,"reflecting!");
                 } else {
                     var target = document.createElement('div');
                     target.className = 'target';
@@ -496,6 +507,7 @@
                 move = [active];
                 var dir = parseInt(active.orig.dir)+toggles[++active.toggle%3];
                 dir = dir < 0 ? 4 + dir : dir;
+                Ti.API.log(dir);
                 pos(el, active.orig.x, active.orig.y, dir);
                 laser();
             }

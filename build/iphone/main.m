@@ -19,7 +19,7 @@ NSString * const TI_APPLICATION_GUID = @"a052fc7e-9180-43e6-b893-25fef36b4a9e";
 BOOL const TI_APPLICATION_ANALYTICS = true;
 
 #ifdef TARGET_IPHONE_SIMULATOR
-NSString * const TI_APPLICATION_RESOURCE_DIR = @"/users/jacob/Documents/apps/Khet/Resources";
+NSString * const TI_APPLICATION_RESOURCE_DIR = @"/Users/KungD/dev/gitreps/khet/Resources";
 #endif
 
 int main(int argc, char *argv[]) {
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 	fprintf(stderr,"[INFO] Application started\n");
 #endif
 
-	int retVal = UIApplicationMain(argc, argv, nil, @"TiApp");
+    int retVal = UIApplicationMain(argc, argv, nil, nil);
     [pool release];
     return retVal;
 }
