@@ -1,5 +1,11 @@
 ;(function(){
     
+    if(/iPhone|iPod|iPad/.test(navigator.userAgent) && !navigator.standalone && !(/debug$/.test(location.href)) ){
+        $('install').style.display = 'block';
+        document.addEventListener('touchmove', function(e){ e.preventDefault(); }, false);
+        return;
+    }
+    
     /**
      * Rotate and position an object in a tile 
      * @param {Object} el

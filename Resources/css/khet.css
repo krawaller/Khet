@@ -7,6 +7,33 @@ html, body {
     background: #222;
 }
 
+#install { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    display: none; 
+    background: #fff;
+    z-index: 3333;
+    color: #323639;
+    text-shadow: 0px 1px 0px rgba(0, 0, 0, 0s.4);
+}
+#install strong {
+    color: #e20a17;
+}
+#install, .table, .cell {
+    width: 100%;
+    height: 100%;
+}
+.table { 
+    display: table; 
+}
+.cell { 
+    display: table-cell; 
+    vertical-align: middle; 
+    text-align: center; 
+}
+
+
 #wrapper {
     width: 480px;
     height: 320px;
