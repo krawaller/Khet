@@ -38,7 +38,7 @@
         laserEl = $('laser');
     
     // Board specific settings
-    var cellSize = 40,
+    var cellSize = window.innerWidth > 480 ? 96: 40,
         width = 10,
         height = 8;
     

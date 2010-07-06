@@ -4,6 +4,7 @@ html, body {
     padding: 0;
     margin: 0;
     font-family: "Lucida Grande", Helvetica;
+    background: #222;
 }
 
 #wrapper {
@@ -33,16 +34,16 @@ td {
     border-right: 1px solid #6f7778;
     border-bottom: 1px solid #6f7778;
     -webkit-border-radius: 3px;
-    /*background: -webkit-gradient(radial, 10 19, 19, 0 5, 5, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)) );*/
+    background-image: -webkit-gradient(radial, 26 26, 33, 30 30, 0, from(rgba(0, 0, 0, 0.3)), to(rgba(0, 0, 0, 0)) );
     -webkit-box-shadow: inset 1px 1px 4px rgba(32, 32, 32, 0.4);
 }
 
 .p0 {
-    background: #ab1416;
+    background-color: #ab1416;
 }
 
 .p1 {
-    background: #b0bbbf;
+    background-color: #b0bbbf;
 }
 
 #pieces {
@@ -66,6 +67,7 @@ td {
     -webkit-transition: -webkit-transform 0.4s ease-in-out;
     -webkit-border-radius: 3px;
     background-position: center center;
+    background-size: 100%;
     -webkit-box-shadow: 0px 0px 4px #000;
 }
 
@@ -111,19 +113,19 @@ td {
     padding: 10px;
 }
 
-.active {
+#pieces .active {
     -webkit-box-shadow: 0px 0px 8px #000;
     z-index: 1337;
     opacity: 0.8;
 }
 
 .potential {
-    background: #00f;
+    background-color: #00f;
     -webkit-box-shadow: 0px 0px 4px #00f, inset 1px 1px 4px rgba(32, 32, 32, 0.4);
 }
 
 .at {
-    background: #ff0;
+    background-color: #ff0;
 }
 
 .target {
