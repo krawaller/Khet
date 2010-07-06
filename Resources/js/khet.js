@@ -245,6 +245,7 @@
                 } else {
                     var target = document.createElement('div');
                     target.className = 'target';
+                    target.appendChild(document.createElement('div'));
                     pos(target, opts.x, opts.y, 0);
                     laserEl.appendChild(target);
                     targets.push({y: opts.y, x: opts.x});
@@ -306,12 +307,14 @@
         touchmove = 'ontouchmove' in document.documentElement ? 'touchmove' : 'mousemove',
         touchend = 'ontouchend' in document.documentElement ? 'touchend' : 'mouseup';
     
-    var move = [], dragging, down, replacements = [], targets = [];
+    var move = [], dragging, down, replacements = [], targets = [], moved = false;
     var toggles = [0, 1,-1];
     var touches = 0;
     var touch;
     var stacking = false;
     var active;
+    var hover;
+    
     /**
      * Touchdown
      * @param {Object} e
@@ -376,17 +379,7 @@
                         }
                     }    
                 }                
-            } else {
-                // Just update move offset
-                /*move.offset = {
-                    x: t.pageX % cellSize,
-                    y: t.pageY % cellSize
-                };*/
             }
-
-        } else if(move.length){
-            //console.log('reset dir');
-            //move.el.dir = move.orig.dir;
         }
     }, false);
     
@@ -397,13 +390,31 @@
     document.addEventListener(touchmove, function(e){
         e.preventDefault();
         if (move.length && down) {
-            var t = e.changedTouches ? e.changedTouches[0] : e;
+            var t = e.changedTouches ? e.changedTouches[0] : e,
+                x = Math.floor(t.pageX / cellSize), 
+                y = Math.floor(t.pageY / cellSize);
+                
+            if(hover){
+                $.removeClass(hover, 'hover disallowed');
+            }
+            hover = (board[y] || [])[x];
+            if (hover) {
+                if ($.hasClass(hover, 'potential at')) {
+                    $.addClass(hover, 'hover');
+                }
+                else {
+                    $.addClass(hover, 'disallowed');
+                }
+            }
+                   
+                
             if(!dragging && Math.max(Math.abs(t.pageX - touch.x), Math.abs(t.pageY - touch.y)) > 10){
                 document.body.className = 'dragging';
                 dragging = true;
             }
-            
-            pos(active.el, (t.pageX - active.offset.x ) / cellSize, (t.pageY - active.offset.y) / cellSize, active.orig.dir, true);
+            setTimeout(function(){
+                pos(active.el, (t.pageX - active.offset.x ) / cellSize, (t.pageY - active.offset.y) / cellSize, active.orig.dir, true);
+            }, 0);
         }
             
     }, false);
@@ -417,6 +428,9 @@
      */
     document.addEventListener(touchend, function(e){
         e.preventDefault();
+        if(hover){
+            $.removeClass(hover, 'hover disallowed');
+        }
         
         if (move.length) {
             var t = e.changedTouches ? e.changedTouches[0] : e, 
@@ -451,17 +465,7 @@
                             }
                         });
                         pos(pieces[y][x][0], active.orig.x, active.orig.y, pieces[y][x][0].dir);
-                    }
-                    /*if(pieces[y][x].length && !units[pieces[y][x][0].type].stackable && !units[move.el.type].stackable){
-                        var replaceable = pieces[y][x][0];
-                        replacements.push({
-                            el: replaceable,
-                            x: replaceable.x,
-                            y: replaceable.y
-                        });
-                        pos(replaceable, move.orig.x, move.orig.y, replaceable.dir);
-                    }*/
-                    
+                    }                    
                     pos(active.el, x, y, active.orig.dir);
                 }
                 else { // Otherwise float back
@@ -494,15 +498,19 @@
     $('done').addEventListener(touchend, function(e){
         e.preventDefault();
         e.stopPropagation();
-        if (move.length > 0) {
-            currentPlayer = (currentPlayer + 1) % 2;
+        if (move.length > 0 && ( (tmp = move[0]), (tmp.el.x != tmp.orig.x || tmp.el.y != tmp.orig.y || tmp.el.dir != tmp.orig.dir) ) ) {
+            
             targets.forEach(function(target){
                 var el = pieces[target.y][target.x][0];
-                console.log('kllin', el)
-                el.style.webkitTransform += ' scale(4)';
+                el.style.zIndex = 1377;
+                el.style.webkitTransform += ' scale(0.1)';
                 el.addEventListener('webkitTransitionEnd', function(e){ el.parentNode.removeChild(el); pieces[target.y][target.x] = pieces[target.y][target.x].without(el); });   
+                if(el.type == 'pharao'){
+                    alert('Player ' + currentPlayer + ' win!');
+                }
             });
             
+            currentPlayer = (currentPlayer + 1) % 2;
             cleanOngoing(1);
             move = [];
             

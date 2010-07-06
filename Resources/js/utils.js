@@ -5,9 +5,9 @@ $.extend = function(destination, source) {
    return destination;
 };
 
-$.hasClass = function(el, cls){ return new RegExp("\\b" + cls + "\\b", "i").test(el.className); }
-$.addClass = function(el, cls){ if(!$.hasClass(el, cls)){ el.className += cls; } }
-$.removeClass = function(el, cls){ el.className = el.className.replace(new RegExp("\\b" + cls + "\\b", "ig"), ""); }
+$.hasClass = function(el, cls){ return new RegExp("\\b" + cls.split(" ").join("|") + "\\b", "i").test(el.className); };
+$.addClass = function(el, cls){ if(!$.hasClass(el, cls)){ el.className += ' ' + cls; } };
+$.removeClass = function(el, cls){ el.className = el.className.replace(new RegExp("\\b" + cls.split(" ").join("|") + "\\b", "ig"), ""); };
     
 Array.prototype.pluck = function(key){
     return this.map(function(obj){ return obj[key]; });

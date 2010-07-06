@@ -7,19 +7,19 @@
 #define _QUOTEME(x) #x
 #define STRING(x) _QUOTEME(x)
 
-NSString * const TI_APPLICATION_DEPLOYTYPE = @"__DEPLOYTYPE__";
-NSString * const TI_APPLICATION_ID = @"__APP_ID__";
-NSString * const TI_APPLICATION_PUBLISHER = @"__APP_PUBLISHER__";
-NSString * const TI_APPLICATION_URL = @"__APP_URL__";
-NSString * const TI_APPLICATION_NAME = @"__APP_NAME__";
-NSString * const TI_APPLICATION_VERSION = @"__APP_VERSION__";
-NSString * const TI_APPLICATION_DESCRIPTION = @"__APP_DESCRIPTION__";
-NSString * const TI_APPLICATION_COPYRIGHT = @"__APP_COPYRIGHT__";
-NSString * const TI_APPLICATION_GUID = @"__APP_GUID__";
-BOOL const TI_APPLICATION_ANALYTICS = __APP_ANALYTICS__;
+NSString * const TI_APPLICATION_DEPLOYTYPE = @"development";
+NSString * const TI_APPLICATION_ID = @"se.krawaller.khet";
+NSString * const TI_APPLICATION_PUBLISHER = @"not specified";
+NSString * const TI_APPLICATION_URL = @"not specified";
+NSString * const TI_APPLICATION_NAME = @"Khet";
+NSString * const TI_APPLICATION_VERSION = @"1.0";
+NSString * const TI_APPLICATION_DESCRIPTION = @"not specified";
+NSString * const TI_APPLICATION_COPYRIGHT = @"not specified";
+NSString * const TI_APPLICATION_GUID = @"a052fc7e-9180-43e6-b893-25fef36b4a9e";
+BOOL const TI_APPLICATION_ANALYTICS = true;
 
 #ifdef TARGET_IPHONE_SIMULATOR
-NSString * const TI_APPLICATION_RESOURCE_DIR = @"__APP_RESOURCE_DIR__";
+NSString * const TI_APPLICATION_RESOURCE_DIR = @"/users/jacob/Documents/apps/Khet/Resources";
 #endif
 
 int main(int argc, char *argv[]) {
