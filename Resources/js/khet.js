@@ -362,23 +362,25 @@
                 el.className += ' active'; // Mark active unit
                 active = m;
                 
+                var candidate;
                 // Mark potential tile candidates
                 for(var iy = Math.max(y - 1, 0), iyMax = Math.min(y+1, height-1); iy <= iyMax; iy++){
                     for(var ix = Math.max(x - 1, 0), ixMax = Math.min(x+1, width-1); ix <= ixMax; ix++){
-                        var candidate = board[iy][ix];
-                        if(!(y == iy && x == ix) ){
-                            if(typeof candidate.p == 'undefined' || candidate.p == currentPlayer){
-                                if (pieces[iy][ix].length == 0 || (unit.replacer && units[pieces[iy][ix][0].type].replaceable) || (unit.stackable && pieces[iy][ix][0].type == el.type)) {
-                                    dirtyCells.push(candidate);
-                                    candidate.className += ' potential';
-                                }   
-                            }             
+                        candidate = board[iy][ix];
+                        if( !(y == iy && x == ix) ){
+                            if (
+                                (typeof candidate.p == 'undefined' || candidate.p == currentPlayer) &&
+                                (pieces[iy][ix].length == 0 || (unit.replacer && units[pieces[iy][ix][0].type].replaceable) || (unit.stackable && pieces[iy][ix][0].type == el.type))
+                            ) {
+                                dirtyCells.push(candidate);
+                                candidate.className += ' potential';
+                            }
                         } else {
                             candidate.className += ' at';
                             dirtyAt = candidate;
                         }
                     }    
-                }                
+                }               
             }
         }
     }, false);
@@ -394,7 +396,7 @@
                 x = Math.floor(t.pageX / cellSize), 
                 y = Math.floor(t.pageY / cellSize);
             
-            /*hover = (board[y] || [])[x];    
+            hover = (board[y] || [])[x];    
             if (hover && hover != lastHover) {
                 if (lastHover) {
                     $.removeClass(lastHover, 'hover disallowed');
@@ -409,13 +411,13 @@
                     //hover.style.border = '1px solid #f00';
                 }
             }
-            lastHover = hover;*/
+            lastHover = hover;
                    
                 
-            //if(!dragging && Math.max(Math.abs(t.pageX - touch.x), Math.abs(t.pageY - touch.y)) > 10){
+            if(!dragging){
                 document.body.className = 'dragging';
                 dragging = true;
-            //}
+            }
             //setTimeout(function(){
                 pos(active.el, (t.pageX - active.offset.x ) / cellSize, (t.pageY - active.offset.y) / cellSize, active.orig.dir, true);
             //}, 0);

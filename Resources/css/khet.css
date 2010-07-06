@@ -88,7 +88,7 @@ td {
 .p1.pyramid { background-image: url(../pics/pyramid1.png); }
 
 .ray {
-    width: 3px;
+    width: 2px;
     background: #0f0;
     -webkit-transform-origin: 1px 1px;
     position: absolute;
@@ -121,11 +121,12 @@ td {
 
 .potential {
     background-color: #00f;
-    -webkit-box-shadow: 0px 0px 4px #00f, inset 1px 1px 4px rgba(32, 32, 32, 0.4);
+   border: 1px solid #00f;
 }
 
 .at {
     background-color: #ff0;
+    border: 1px solid #ff0;
 }
 
 .target {
