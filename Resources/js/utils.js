@@ -1,4 +1,5 @@
 var $ = function(id){ return document.getElementById(id); };
+
 $.extend = function(destination, source) {
    for (var property in source)
        destination[property] = source[property];
