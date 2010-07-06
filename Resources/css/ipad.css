@@ -1,0 +1,93 @@
+#wrapper {
+    width: 1024px;
+    height: 768px;
+}
+
+#board {
+    width: 960px;
+    height: 768px;
+}
+
+td {
+    width: 94px;
+    height: 94px;
+    border-top: 2px solid #3a3e3f;
+    border-left: 2px solid #3a3e3f;
+    
+    border-right: 2px solid #6f7778;
+    border-bottom: 2px solid #6f7778;
+    -webkit-border-radius: 6px;
+    -webkit-box-shadow: inset 2px 2px 8px rgba(32, 32, 32, 0.4);
+    
+    background-image: -webkit-gradient(radial, 64 64, 80, 72 72, 0, from(rgba(0, 0, 0, 0.3)), to(rgba(0, 0, 0, 0)) );
+}
+
+#pieces {
+    position: absolute;
+    top: 4px;
+    left: 2px;
+}
+
+#laser {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1357;
+    -webkit-animation: pulse 2s linear 0s infinite normal;   
+}
+
+#pieces > div {
+    width: 92px;
+    height: 92px;
+    -webkit-border-radius: 6px;
+    -webkit-box-shadow: 0px 0px 4px #000;
+}
+
+.ray {
+    width: 6px;
+    -webkit-transform-origin: 3px 3px;
+}
+
+#menu {
+    width: 64px;
+    height: 768px;
+    left: 960px;
+    -webkit-box-shadow: 0px 0px 16px #000;
+}
+
+#done {
+    text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.2);
+}
+
+#pieces .active {
+    -webkit-box-shadow: 0px 0px 16px #000;
+}
+
+.potential {
+    -webkit-box-shadow: 0px 0px 4px #00f, inset 1px 1px 4px rgba(32, 32, 32, 0.4);
+}
+
+.target div {
+    width: 96px;
+    height: 96px;
+    font-size: 96px;
+    webkit-box-shadow: 0px 0px 2px #000;
+}
+
+.hover {
+    border: 2px solid #0f0;
+}
+
+.disallowed {
+    border: 2px solid #f00;
+}
+
+.p0.obelisk { background-image: url(../pics/obelisk0@2x.png); }
+.p0.pharao { background-image: url(../pics/pharao0@2x.png); }
+.p0.djed { background-image: url(../pics/djed0@2x.png); }
+.p0.pyramid { background-image: url(../pics/pyramid0@2x.png); }
+
+.p1.obelisk { background-image: url(../pics/obelisk1@2x.png); }
+.p1.pharao { background-image: url(../pics/pharao1@2x.png); }
+.p1.djed { background-image: url(../pics/djed1@2x.png); }
+.p1.pyramid { background-image: url(../pics/pyramid1@2x.png); }
