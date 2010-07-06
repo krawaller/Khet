@@ -313,7 +313,7 @@
     var touch;
     var stacking = false;
     var active;
-    var hover;
+    var hover, lastHover;
     
     /**
      * Touchdown
@@ -335,7 +335,7 @@
         // Is it a piece belonging to the currentPlayer?    
         if(el && /\bpiece\b/.test(el.className) && el.p == currentPlayer){
             if(!move.length || move.pluck('el').indexOf(el) == -1){
-                if(!move.length || move.length && !move.pluck('el').map(function(el){ return units[el.type].stackable }).compact().length ){
+                if(!move.length || (move.length && !move.pluck('el').map(function(el){ return units[el.type].stackable }).compact().length) ){
                     cleanOngoing();    
                 } else {
                     cleanOngoing(1);
@@ -393,28 +393,32 @@
             var t = e.changedTouches ? e.changedTouches[0] : e,
                 x = Math.floor(t.pageX / cellSize), 
                 y = Math.floor(t.pageY / cellSize);
-                
-            if(hover){
-                $.removeClass(hover, 'hover disallowed');
-            }
-            hover = (board[y] || [])[x];
-            if (hover) {
+            
+            /*hover = (board[y] || [])[x];    
+            if (hover && hover != lastHover) {
+                if (lastHover) {
+                    $.removeClass(lastHover, 'hover disallowed');
+                    //lastHover.style.border = 'inherit';
+                }
                 if ($.hasClass(hover, 'potential at')) {
                     $.addClass(hover, 'hover');
+                    //hover.style.border = '1px solid #0f0';
                 }
                 else {
                     $.addClass(hover, 'disallowed');
+                    //hover.style.border = '1px solid #f00';
                 }
             }
+            lastHover = hover;*/
                    
                 
-            if(!dragging && Math.max(Math.abs(t.pageX - touch.x), Math.abs(t.pageY - touch.y)) > 10){
+            //if(!dragging && Math.max(Math.abs(t.pageX - touch.x), Math.abs(t.pageY - touch.y)) > 10){
                 document.body.className = 'dragging';
                 dragging = true;
-            }
-            setTimeout(function(){
+            //}
+            //setTimeout(function(){
                 pos(active.el, (t.pageX - active.offset.x ) / cellSize, (t.pageY - active.offset.y) / cellSize, active.orig.dir, true);
-            }, 0);
+            //}, 0);
         }
             
     }, false);
@@ -443,7 +447,7 @@
                 document.body.className = '';
 
                 // Allowed move?
-                if (board[y][x] && $.hasClass(board[y][x], 'potential')) {
+                if ((board[y] || [])[x] && $.hasClass(board[y][x], 'potential')) {
                     if(
                         units[active.el.type].stackable && 
                         move.without(active).filter(function(m){ return m.orig.x == active.orig.x && m.orig.y == active.orig.y; }).length == move.without(active).length &&
@@ -481,6 +485,7 @@
             } else if(el == active.el && touches != active.touch) {
                 // Rotate unit
                 revert(move.without(active));
+                move = [active];
                 var dir = parseInt(active.orig.dir)+toggles[++active.toggle%3];
                 dir = dir < 0 ? 4 + dir : dir;
                 pos(el, active.orig.x, active.orig.y, dir);
