@@ -266,7 +266,7 @@
      * Clean board from current selection
      */
     var dirtyCells = [], dirtyAt;
-    function cleanOngoing(){
+    function cleanOngoing(noRevert){
         dirtyCells.forEach(function(cell){
             $.removeClass(cell, 'potential');
         });
@@ -277,15 +277,25 @@
             dirtyAt = null;
         }
         
-        if (move) {
-            console.log('Cleaning move')
-            move.el.style.webkitTransform = pos(move.el, move.orig.x, move.orig.y, move.orig.dir);
-            move.el.dir = move.orig.dir;
-            $.removeClass(move.el, 'active');
+        move.forEach(function(m){
+            if (!noRevert) {
+                pos(m.el, m.orig.x, m.orig.y, m.orig.dir);
+            }
+            $.removeClass(m.el, 'active');
+        });
             
-            move = false;
-            $.pub('/laser');
+        console.log('Cleaning move')
+        if (!noRevert) {
+            move = [];
         }
+        $.pub('/laser');
+        
+    }
+    
+    function revert(arr){
+        arr.forEach(function(m){
+            pos(m.el, m.orig.x, m.orig.y, m.orig.dir);    
+        });
     }
     
     /**
@@ -295,11 +305,12 @@
         touchmove = 'ontouchmove' in document.documentElement ? 'touchmove' : 'mousemove',
         touchend = 'ontouchend' in document.documentElement ? 'touchend' : 'mouseup';
     
-    var move, dragging, down, replacements = [];
+    var move = [], dragging, down, replacements = [];
     var toggles = [0, 1,-1];
     var touches = 0;
     var touch;
     var stacking = false;
+    var active;
     /**
      * Touchdown
      * @param {Object} e
@@ -319,22 +330,24 @@
             
         // Is it a piece belonging to the currentPlayer?    
         if(el && /\bpiece\b/.test(el.className) && el.p == currentPlayer){
-            if(!move || el != move.el){
-                if(!move || move && !units[move.el.type].stackable){
+            if(!move.length || move.pluck('el').indexOf(el) == -1){
+                if(!move.length || move.length && !move.pluck('el').map(function(el){ return units[el.type].stackable }).compact().length ){
                     cleanOngoing();    
                 } else {
-                    stacking = {
+                    console.log('stacking');
+                    cleanOngoing(1);
+                    /*stacking = {
                         el: move.el,
                         orig: {
                             x: move.orig.x,
                             y: move.orig.y,
                             dir: move.orig.dir
                         }
-                    }
+                    }*/
                 }
                 
                 // Initiate movement obejct
-                move = {
+                var m = {
                     toggle: 0,
                     el: el,
                     orig: {
@@ -348,9 +361,11 @@
                     },
                     touch: touches
                 };
+                move.push(m);
     
                 unit = units[el.type];
                 el.className += ' active'; // Mark active unit
+                active = m;
                 
                 // Mark potential tile candidates
                 for(var iy = Math.max(y - 1, 0), iyMax = Math.min(y+1, height-1); iy <= iyMax; iy++){
@@ -358,11 +373,10 @@
                         var candidate = board[iy][ix];
                         if(!(y == iy && x == ix) ){
                             if(typeof candidate.p == 'undefined' || candidate.p == currentPlayer){
-                                
-                                if (pieces[iy][ix].length == 0 || (unit.replacer && units[pieces[iy][ix][0].type].replaceable) || (unit.stacker && pieces[iy][ix][0].type == el.type)) {
+                                if (pieces[iy][ix].length == 0 || (unit.replacer && units[pieces[iy][ix][0].type].replaceable) || (unit.stackable && pieces[iy][ix][0].type == el.type)) {
                                     dirtyCells.push(candidate);
                                     candidate.className += ' potential';
-                                }     
+                                }   
                             }             
                         } else {
                             candidate.className += ' at';
@@ -372,14 +386,16 @@
                 }                
             } else {
                 // Just update move offset
+                console.log('update offset');
                 move.offset = {
                     x: t.pageX % cellSize,
                     y: t.pageY % cellSize
                 };
             }
 
-        } else if(move && move.el){
-            move.el.dir = move.orig.dir;
+        } else if(move.length){
+            console.log('reset dir');
+            //move.el.dir = move.orig.dir;
         }
     }, false);
     
@@ -389,14 +405,14 @@
      */
     document.addEventListener(touchmove, function(e){
         e.preventDefault();
-        if (move && down) {
+        if (move.length && down) {
             var t = e.changedTouches ? e.changedTouches[0] : e;
             if(!dragging && Math.max(Math.abs(t.pageX - touch.x), Math.abs(t.pageY - touch.y)) > 10){
                 document.body.className = 'dragging';
                 dragging = true;
             }
             
-            pos(move.el, (t.pageX - move.offset.x ) / cellSize, (t.pageY - move.offset.y) / cellSize, move.orig.dir, true);
+            pos(active.el, (t.pageX - active.offset.x ) / cellSize, (t.pageY - active.offset.y) / cellSize, active.orig.dir, true);
         }
             
     }, false);
@@ -423,7 +439,7 @@
         }
         e.preventDefault();
         
-        if (move) {
+        if (move.length) {
             var t = e.changedTouches ? e.changedTouches[0] : e, 
                 x = Math.floor(t.pageX / cellSize), 
                 y = Math.floor(t.pageY / cellSize),
@@ -435,6 +451,7 @@
             replacements = [];
             
             if(stacking){
+                console.log('stacky');
                 if(stacking.el.x != x || stacking.el.y != y){
                     console.log(stacking.el.y, stacking.el.x, y, x )
                     pos(stacking.el, stacking.orig.x, stacking.orig.y, stacking.dir);
@@ -445,12 +462,36 @@
             
             
             // Are we dragging?    
-            if (dragging || (el != move.el && touches != move.touch)) {
+            if (dragging || (el != active.el && touches != active.touch)) {
                 document.body.className = '';
 
                 // Allowed move?
                 if (board[y][x] && $.hasClass(board[y][x], 'potential')) {
-                    if(pieces[y][x].length && !units[pieces[y][x][0].type].stackable && !units[move.el.type].stackable){
+                    console.log('pot');
+                    if(
+                        units[active.el.type].stackable && 
+                        move.without(active).filter(function(m){ return m.orig.x == active.orig.x && m.orig.y == active.orig.y; }).length == move.without(active).length &&
+                        move.pluck('el').filter(function(el){ return !!units[el.type].stackable }).length == move.length && 
+                        move.without(active).filter(function(m){ return m.el.x == x && m.el.y == y; }).length == move.without(active).length
+                    ){
+                        console.log('stack me!')
+                    } else {
+                        revert(move.without(active));
+                    }
+                    
+                    if(pieces[y][x].length && units[active.el.type].replacer && units[pieces[y][x][0].type].replaceable){
+                        console.log('replacin');
+                        move.push({
+                            el: el,
+                            orig: {
+                                x: x,
+                                y: y,
+                                dir: el.dir
+                            }
+                        });
+                        pos(pieces[y][x][0], active.orig.x, active.orig.y, pieces[y][x][0].dir);
+                    }
+                    /*if(pieces[y][x].length && !units[pieces[y][x][0].type].stackable && !units[move.el.type].stackable){
                         var replaceable = pieces[y][x][0];
                         replacements.push({
                             el: replaceable,
@@ -458,25 +499,26 @@
                             y: replaceable.y
                         });
                         pos(replaceable, move.orig.x, move.orig.y, replaceable.dir);
-                    }
+                    }*/
                     
-                    pos(move.el, x, y, move.orig.dir);
+                    pos(active.el, x, y, active.orig.dir);
                 }
                 else { // Otherwise float back
                     console.log('get back')
-                    pos(move.el, move.orig.x, move.orig.y, move.orig.dir);
+                    pos(active.el, active.orig.x, active.orig.y, active.orig.dir);
                     
-                    if(touches != move.touch){
+                    if(touches != active.touch){
                         cleanOngoing();       
                     }
                 }
                 $.pub('/laser');
                 dragging = false;
-            } else if(el == move.el && touches != move.touch) {
+
+            } else if(el == active.el && touches != active.touch) {
                 // Rotate unit
-                var dir = parseInt(move.orig.dir)+toggles[++move.toggle%3];
+                var dir = parseInt(active.orig.dir)+toggles[++active.toggle%3];
                 dir = dir < 0 ? 4 + dir : dir;
-                pos(el, move.orig.x, move.orig.y, dir);
+                pos(el, active.orig.x, active.orig.y, dir);
                 $.pub('/laser');
             }
             
@@ -503,11 +545,14 @@
         e.stopPropagation();
         currentPlayer = (currentPlayer + 1) % 2;
         $.removeClass(move.el, 'active');
-        move = false;
+        move = [];
         cleanOngoing();
         $.pub('/laser');
     }, false);
     
-    $.sub('/**', function(){ console.log('Listening'); console.log.apply(console, arguments); });
+    $.sub('/**', function(){ 
+        //console.log('Listening'); 
+        console.log.apply(console, arguments); 
+    });
     $.pub('/laser');
 })();
