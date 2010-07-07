@@ -1,8 +1,21 @@
 var $ = function(id){ return document.getElementById(id); };
+
 $.extend = function(destination, source) {
    for (var property in source)
        destination[property] = source[property];
    return destination;
+};
+
+$.clone = function(obj){
+    var clone = new obj.constructor(), props = [], p;
+    for(p in obj){
+        props.push([p]);
+    }
+    props.sort();
+    for(p=0;p<props.length;p++){
+        clone[props[p]] = typeof obj[props[p]] === "object" ? lab.cloneObj(obj[props[p]]) : obj[props[p]];
+    }
+    return clone;
 };
 
 $.hasClass = function(el, cls){ return new RegExp("\\b" + cls.split(" ").join("|") + "\\b", "i").test(el.className); };

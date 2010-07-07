@@ -108,11 +108,13 @@ td {
 .p0.pharao { background-image: url(../pics/pharao0.png); }
 .p0.djed { background-image: url(../pics/djed0.png); }
 .p0.pyramid { background-image: url(../pics/pyramid0.png); }
+.p0.eye { background-image: url(../pics/eye0.png); }
 
 .p1.obelisk { background-image: url(../pics/obelisk1.png); }
 .p1.pharao { background-image: url(../pics/pharao1.png); }
 .p1.djed { background-image: url(../pics/djed1.png); }
 .p1.pyramid { background-image: url(../pics/pyramid1.png); }
+.p1.eye { background-image: url(../pics/eye1.png); }
 
 .ray {
     width: 2px;
