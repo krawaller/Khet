@@ -7,7 +7,17 @@ html, body {
     background: #222;
 }
 
-#install { 
+#landscape {
+    display: none;
+}
+
+@media (orientation:portrait) { 
+    #landscape {
+        display: block;
+    }
+}
+
+.screen { 
     position: absolute; 
     top: 0; 
     left: 0; 
@@ -17,10 +27,10 @@ html, body {
     color: #323639;
     text-shadow: 0px 1px 0px rgba(0, 0, 0, 0s.4);
 }
-#install strong {
+.screen strong {
     color: #e20a17;
 }
-#install, .table, .cell {
+.screen, .table, .cell {
     width: 100%;
     height: 100%;
 }
@@ -41,7 +51,7 @@ html, body {
 }
 
 #board {
-    width: 400px;
+    width: 370px; /* FIXME: 400 px */
     height: 320px;
     background: #484d4e;
 }
@@ -53,8 +63,8 @@ table,tr,td {
 }
 
 td {
-    width: 38px;
-    height: 38px;
+    width: 35px; /*FIXME: 38px */
+    height: 35px; /*FIXME: 38px */
     border-top: 1px solid #3a3e3f;
     border-left: 1px solid #3a3e3f;
     
@@ -88,8 +98,8 @@ td {
 }
 
 #pieces > div {
-    width: 36px;
-    height: 36px;
+    width: 33px; /*FIXME: 36px */
+    height: 33px; /*FIXME: 36px */
     position: absolute;
     -webkit-transition: -webkit-transform 0.4s ease-in-out;
     -webkit-border-radius: 3px;
@@ -125,12 +135,12 @@ td {
 }
 
 #menu {
-    width: 80px;
+    width: 110px; /* FIXME: 80px */
     height: 320px;
     background: #222;
     position: absolute;
     top: 0px;
-    left: 400px;
+    left: 370px; /* FIXME: 400px */
     -webkit-box-shadow: 0px 0px 16px #000;
     z-index: 2337;
 }
@@ -164,10 +174,10 @@ td {
 
 .target div {
     opacity: 0.8;
-    width: 40px;
-    height: 40px;
+    width: 37px; /*FIXME: 40px */
+    height: 37px; /*FIXME: 40px */
     color: #0f0;
-    font-size: 40px;
+    font-size: 37px;
     text-align: center;
     webkit-box-shadow: 0px 0px 2px #000;
    -webkit-animation: rotateZ 1s linear 0s infinite normal;    

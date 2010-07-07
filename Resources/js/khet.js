@@ -1,6 +1,6 @@
 ;(function(){
     
-    if(/iPhone|iPod|iPad/.test(navigator.userAgent) && !navigator.standalone && !(/debug$/.test(location.href)) && false){
+    if(/iPhone|iPod|iPad/.test(navigator.userAgent) && !navigator.standalone && !(/debug$/.test(location.href)) ){
         $('install').style.display = 'block';
         document.addEventListener('touchmove', function(e){ e.preventDefault(); }, false);
         return;
@@ -44,7 +44,7 @@
         laserEl = $('laser');
     
     // Board specific settings
-    var cellSize = window.innerWidth > 480 ? 96: 40, //FIXME
+    var cellSize = window.innerWidth > 480 ? 37: 37, //FIXME: 40
         width = 10,
         height = 8;
     
