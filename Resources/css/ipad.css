@@ -90,8 +90,10 @@ td {
 .p0.pharao { background-image: url(../pics/pharao0@2x.png); }
 .p0.djed { background-image: url(../pics/djed0@2x.png); }
 .p0.pyramid { background-image: url(../pics/pyramid0@2x.png); }
+.p0.eye { background-image: url(../pics/eye0@2x.png); }
 
 .p1.obelisk { background-image: url(../pics/obelisk1@2x.png); }
 .p1.pharao { background-image: url(../pics/pharao1@2x.png); }
 .p1.djed { background-image: url(../pics/djed1@2x.png); }
 .p1.pyramid { background-image: url(../pics/pyramid1@2x.png); }
+.p1.eye { background-image: url(../pics/eye1@2x.png); }

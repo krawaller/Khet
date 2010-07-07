@@ -44,7 +44,7 @@
         laserEl = $('laser');
     
     // Board specific settings
-    var cellSize = window.innerWidth > 480 ? 96: 40,
+    var cellSize = window.innerWidth > 480 ? 96: 40, //FIXME
         width = 10,
         height = 8;
     
@@ -236,7 +236,7 @@
     function laserRay(opts,why){
         var at = { x: opts.x, y: opts.y };
         var el, els;
-Ti.API.log(opts.x+" "+opts.y+" "+opts.dir+" "+why);
+
         // Loop through tiles
         while((opts.y+=dirs[opts.dir].dy), (opts.x+=dirs[opts.dir].dx), (els = (pieces[opts.y] || {})[opts.x])){
             if(els.length){
@@ -256,7 +256,7 @@ Ti.API.log(opts.x+" "+opts.y+" "+opts.dir+" "+why);
                 
                 // Reflecting unit?
                 reflects = units[el.type].reflects;
-                if(reflects && reflects[el.dir][opts.dir]){
+                if(reflects && typeof reflects[el.dir][opts.dir] != 'undefined'){
                     opts.dir = reflects[el.dir][opts.dir];
                     laserRay(opts,"reflecting!");
                 } else {
@@ -507,7 +507,6 @@ Ti.API.log(opts.x+" "+opts.y+" "+opts.dir+" "+why);
                 move = [active];
                 var dir = parseInt(active.orig.dir)+toggles[++active.toggle%3];
                 dir = dir < 0 ? 4 + dir : dir;
-                Ti.API.log(dir);
                 pos(el, active.orig.x, active.orig.y, dir);
                 laser();
             }
