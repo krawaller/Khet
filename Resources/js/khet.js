@@ -505,10 +505,12 @@
                 // Rotate unit
                 revert(move.without(active));
                 move = [active];
-                var dir = parseInt(active.orig.dir)+toggles[++active.toggle%3];
-                dir = dir < 0 ? 4 + dir : dir;
-                pos(el, active.orig.x, active.orig.y, dir);
-                laser();
+                if (units[active.el.type].reflects) { // Only reflecting units are rotateable
+                    var dir = parseInt(active.orig.dir) + toggles[++active.toggle % 3];
+                    dir = dir < 0 ? 4 + dir : dir;
+                    pos(el, active.orig.x, active.orig.y, dir);
+                    laser();
+                }
             }
         }
         
