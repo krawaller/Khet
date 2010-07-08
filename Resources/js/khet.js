@@ -1,6 +1,6 @@
 ;(function(){
     
-    if(/iPhone|iPod|iPad/.test(navigator.userAgent) && !navigator.standalone && !(/debug$/.test(location.href)) ){
+    if(/iPhone|iPod|iPad/.test(navigator.userAgent) && !navigator.standalone && !(/debug$/.test(location.href))){
         $('install').style.display = 'block';
         document.addEventListener('touchmove', function(e){ e.preventDefault(); }, false);
         return;
@@ -177,7 +177,8 @@
                 2: { 1: 0, 2: 3 },
                 3: { 2: 1, 3: 0 }
             },
-            replaceable: true
+            replaceable: true,
+            rotates: 4
         },
         
         eye: {
@@ -189,7 +190,7 @@
             },
             passthrough: true,
             replacer: true,
-            replaceable: false
+            rotates: 2
         },
         
         djed: {
@@ -200,11 +201,11 @@
                 3: { 0: 3, 1: 2, 2: 1, 3: 0 }
             },
             replacer: true,
-            replaceable: false
+            rotates: 2
         },
         
         pharao: {
-            replaceable: false
+
         },
         
         obelisk: {
@@ -505,8 +506,8 @@
                 // Rotate unit
                 revert(move.without(active));
                 move = [active];
-                if (units[active.el.type].reflects) { // Only reflecting units are rotateable
-                    var dir = parseInt(active.orig.dir) + toggles[++active.toggle % 3];
+                if (units[active.el.type].rotates) { // Only reflecting units are rotateable
+                    var dir = parseInt(active.orig.dir) + toggles[++active.toggle % (units[active.el.type].rotates === 4 ? 3 : 2)];
                     dir = dir < 0 ? 4 + dir : dir;
                     pos(el, active.orig.x, active.orig.y, dir);
                     laser();
